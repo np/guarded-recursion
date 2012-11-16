@@ -37,13 +37,41 @@ map▹ f ▹x = next f ⊛ ▹x
 S : ★
 S = fix F
 
+head : S → ℕ
+head s with un F s
+... | x , _ = x
+
+tail : S → ▹ S
+tail s with un F s
+... | _ , xs = ▹Set-rule′ xs
+
+cons : ℕ → ▹ S → S
+cons x xs = roll F (x , ▹Set-rule xs)
+
 mapS : (ℕ → ℕ) → S → S
 mapS f = fix mp
   where mp : ▹ (S → S) → S → S
-        mp self s with un F s
-        ... | x , xs = roll F (f x , (▹Set-rule (self ⊛ ▹Set-rule′ xs)))
+        mp self s = cons (f (head s)) (self ⊛ tail s)
+
+mapS2 : (ℕ → ℕ) → S → S
+mapS2 f = fix mp
+  where
+    mp : ▹ (S → S) → S → S
+    mp self s = cons (f (head s)) (next (λ s' → cons (f (head s')) (self ⊛ tail s')) ⊛ tail s)
 
 nats : S
 nats = fix f
   where f : ▹ S → S
-        f self = roll F (zero , ▹Set-rule (map▹ (mapS suc) self))
+        f self = cons 0 (map▹ (mapS suc) self)
+
+nats2 : S
+nats2 = fix f
+  where f : ▹ S → S
+        f self = cons 0 (map▹ (mapS2 suc) self)
+
+
+arrow : ▹ ℕ
+arrow = map▹ head (tail nats)
+
+browken : ▹ ℕ
+browken = map▹ head (tail nats2)
