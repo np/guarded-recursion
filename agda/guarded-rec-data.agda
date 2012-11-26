@@ -94,14 +94,26 @@ module M
   repeatS : ∀ {A} → A → S A
   repeatS x = fix (_∷_ x)
 
+  zapSf : ∀ {A B} → ▹ (S (A → B) → S A → S B)
+                  →    S (A → B) → S A → S B
+  zapSf zapS fs xs = hd fs (hd xs) ∷ zapS ⊛ tl fs ⊛ tl xs
+
+  zapS : ∀ {A B} → S (A → B) → S A → S B
+  zapS = fix zapSf
+
+  -- repeatS and zapS form an applicative functor
+
+  iterateS : ∀ {A} → (A → A) → A → S A
+  iterateS f = fix λ iterateS x → x ∷ iterateS ⊛ next (f x)
+
   mapSf : ∀ {A B} → (A → B) → ▹(S A → S B) → S A → S B
-  mapSf f self xs = f (hd xs) ∷ self ⊛ tl xs
+  mapSf f mapS xs = f (hd xs) ∷ mapS ⊛ tl xs
 
   mapS : ∀ {A B} → (A → B) → S A → S B
   mapS f = fix (mapSf f)
 
   nats : S ℕ
-  nats = fix (λ self → 0 ∷ map▹ (mapS suc) self)
+  nats = fix (λ nats → 0 ∷ map▹ (mapS suc) nats)
 
   ▹^ : ∀ ℕ → ★ → ★
   ▹^ zero    A = A
