@@ -1,10 +1,14 @@
+-- be afraid… Type as type Type
 {-# OPTIONS --type-in-type #-}
-open import Relation.Binary.PropositionalEquality
-open import Function
-open import Data.Nat
-open import Data.Unit
+
+open import Relation.Binary.PropositionalEquality using (_≡_; refl; sym; subst)
+open import Function using (id; _∘_)
+open import Data.Nat using (ℕ; zero; suc)
+open import Data.Unit using (Hidden; reveal; hide)
 open import Data.Product using (_×_; Σ; _,_; proj₁; proj₂)
+
 module guarded-rec-data where
+
 infixl 6 _⊛_
 
 ★ = Set
@@ -23,41 +27,44 @@ data ▹_ where
 run (next x) = x
 run (f  ⊛ x) = run f (run x)
 
-▹′ : ▹ ★ → ★
-▹′ x = ▹ (run x)
+▸ : ▹ ★ → ★
+▸ x = ▹ (run x)
 
-foo : ∀ {A} {B : A → ★} {x} → ▹′ (next B ⊛ x) ≡ ▹ (B (run x))
-foo = refl
+▸F : ∀ {A} → (A → ★) → ▹ A → ★
+▸F F x = ▸ (next F ⊛ x)
 
-const⊛ : ∀ {A} {X : ★} {x : ▹ X} → ▹′ (next (λ _ → A) ⊛ x) ≡ ▹ A
-const⊛ = refl
+map▹ : ∀ {A} {B : A → ★} → ((x : A) → B x) → (x : ▹ A) → ▸F B x
+map▹ f x = next f ⊛ x
 
--- useless
--- _⊛′_ : ∀ {A B} → ▹ (A → B) → ▹ A → ▹ B
--- _⊛′_ = _⊛_
+private
+  module Unused where
+    by-computation : ∀ {A} {B : A → ★} {x} → ▸ (next B ⊛ x) ≡ ▹ (B (run x))
+    by-computation = refl
 
--- useless
--- map▹′ : ∀ {A B} → (A → B) → ▹ A → ▹ B
--- map▹′ = map▹
+    const⊛ : ∀ {A} {X : ★} {x : ▹ X} → ▸ (next (λ _ → A) ⊛ x) ≡ ▹ A
+    const⊛ = refl
 
-map▹  : ∀ {A} {B : A → ★} → ((x : A) → B x) → (x : ▹ A) → ▹ (B (run x)) -- ▹′ (next B ⊛′ x)
-map▹  f x = next f ⊛ x
+    -- useless: the dependent version is just as fine
+    _⊛′_ : ∀ {A B} → ▹ (A → B) → ▹ A → ▹ B
+    _⊛′_ = _⊛_
 
-▹′F : ∀ {A} → (A → ★) → ▹ A → ★
-▹′F F = ▹′ ∘ map▹ F
+    -- useless: the dependent version is just as fine
+    map▹′ : ∀ {A B} → (A → B) → ▹ A → ▹ B
+    map▹′ = map▹
 
-zip : ∀ {A} {B : A → ★} → Σ (▹ A) (▹′F B) → ▹ Σ A B
+zip : ∀ {A} {B : A → ★} → Σ (▹ A) (▸F B) → ▹ Σ A B
 zip (x , y) = map▹ _,_ x ⊛ y
 
-unzip : ∀ {A} {B : A → ★} → ▹ Σ A B → Σ (▹ A) (▹′F B)
+unzip : ∀ {A} {B : A → ★} → ▹ Σ A B → Σ (▹ A) (▸F B)
 unzip p = map▹ proj₁ p , map▹ proj₂ p
 
 module M
-   (fix : ∀ {A} → (▹ A → A) → A)
+   (fix      : ∀ {A} → (▹ A → A) → A)
    (fix-rule : ∀ {A} (f : ▹ A → A) → fix f ≡ f (next (fix f))) where
 
+  -- Streams of 'A's
   S : ★ → ★
-  S A = fix (λ X → A × ▹′ X)
+  S A = fix (λ X → A × ▸ X)
 
   rollS : ∀ {A} → A × ▹ (S A) → S A
   rollS = subst id (sym (fix-rule _))
@@ -76,8 +83,7 @@ module M
   x ∷ xs = rollS (x , xs)
 
   BF : ∀ {A} → ▹ (S A → S A → ★) → S A → S A → ★
-  BF ▹B xs ys = (hd xs ≡ hd ys) × ▹′ (▹B ⊛ tl xs ⊛ tl ys)
-  -- BF ▹B xs ys = (hd xs ≡ hd ys) × ▹ (run ▹B (run (tl xs)) (run (tl ys)))
+  BF ▹B xs ys = (hd xs ≡ hd ys) × ▸ (▹B ⊛ tl xs ⊛ tl ys)
 
   B : ∀ {A} → S A → S A → ★
   B = fix BF
@@ -88,6 +94,9 @@ module M
   B-reflF : ∀ {A} → ▹((xs : S A) → B xs xs) → (xs : S A) → B xs xs
   B-reflF ▹BR xs = rollB (refl , ▹BR ⊛ tl xs)
 
+  -- Reflexivity of the Bisimilarity relation
+  -- Thanks to computation at the level of types this definition nicely
+  -- goes through.
   B-refl : ∀ {A} (xs : S A) → B xs xs
   B-refl = fix B-reflF
 
@@ -138,17 +147,18 @@ module M
   run‼ : ∀ {A} → ℕ → S A → A
   run‼ n = run^ n ∘ ‼ n
 
-module Foo where
-  module F {A} (f : ▹ A → A) where
+module HiddenFix {A} (f : ▹ A → A) where
+    -- This definition is not intended to termination-check.
+    -- Use with care it's really easy to make the type-checker loop.
+    {-# NO_TERMINATION_CHECK #-}
     fix : Hidden A
     fix = hide f (next (reveal fix))
 
     fix-rule : reveal fix ≡ f (next (reveal fix))
     fix-rule = refl {_} {A} {reveal fix}
-  open F
 
-  open M (λ f → reveal (fix f)) fix-rule public
-open Foo
+open HiddenFix
+open M (reveal ∘ fix) fix-rule
 
   -- -}
   -- -}
