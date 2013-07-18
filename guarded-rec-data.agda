@@ -1,5 +1,15 @@
--- be afraid… Type as type Type
+-- Be afraid… Type as type Type
 {-# OPTIONS --type-in-type #-}
+
+{-
+Be really afraid: this module is a hack to give definitional equalities
+to ▹. This is done by introducing an 'evil' function called 'run' that
+should not appear in user code. Is this safe to do? This remains to be
+explored.
+
+By the same token we give a definitional equalities to fix as well.
+Beware of non-termination!
+-}
 
 open import Relation.Binary.PropositionalEquality using (_≡_; refl; sym; subst)
 open import Function using (id; _∘_)
