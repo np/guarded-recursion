@@ -1,5 +1,9 @@
 -- broken since the clocks are not supposed to be freely instantiable
-module ...
+open import Function
+open import Data.Product
+open import Relation.Binary.PropositionalEquality
+open import guarded-recursion.embedding
+module guarded-recursion.clocks
     (Clk : ★)
     (▹ : ∀ {a} → Clk → Set a → Set a)
 
@@ -54,9 +58,11 @@ module ...
     μ-rule f = {!trans fix-rule (cong f (▹′-rule {A = μ f}))!}
     -}
 
+    {-
     rollμ : ∀ {a} f → (∀ {κ} → f (▹ κ (μ f))) → μ {a} f
     rollμ f x {κ} = {!roll (x {κ})!}
     -- rollμ f = subst id (sym (μ-rule f))
+    -}
 
     un₁ : ∀ {κ a b} {A : Set a} {f x} → fix {κ} {A = A → Set b} f x → f (next (fix f)) x
     un₁ = coe₁ fix-rule
@@ -110,5 +116,7 @@ module ...
         μid-rule = {!trans fix-rule (▹′-rule {A = μ id})!}
         -}
 
+        {-
         ω : μid
         ω = fix (rollμ id)
+        -}
