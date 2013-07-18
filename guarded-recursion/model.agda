@@ -75,6 +75,14 @@ module Presheaf
               → f ∘ᶜ (g ∘ᶜ h) ≡ f' ∘ᶜ (g' ∘ᶜ h)
   with-∘-assocᶜ p = ! ∘-assocᶜ ∙ ap-∘ᶜ p ∙ ∘-assocᶜ
 
+  with-!∘-assocᶜ : {A B B' C D : Objᶜ}
+              {f  : C  →ᶜ D}
+              {g  : B  →ᶜ C} {h : A →ᶜ B}
+              {g' : B' →ᶜ C} {h' : A →ᶜ B'}
+              → g ∘ᶜ h ≡ g' ∘ᶜ h'
+              → (f ∘ᶜ g) ∘ᶜ h ≡ (f ∘ᶜ g') ∘ᶜ h'
+  with-!∘-assocᶜ p = ∘-assocᶜ ∙ ap-∘ᶜ' p ∙ ! ∘-assocᶜ
+
   {-
       B ---f--> D ---e--> F
       ^         ^         ^
@@ -101,6 +109,44 @@ module Presheaf
 
       LR : Squareᶜ (e ∘ᶜ f) g j (k ∘ᶜ i)
       LR = efg-ehi ∙ ehi-jki
+
+  {-
+                    X
+                  / . \
+                /   .   \
+              /     .     \
+           f/       .u!     \g
+          /         .         \
+        v           v           v
+      A <---fst--- A×B ---snd---> B
+  -}
+  module _
+     {A B A×B X : Objᶜ}
+     {fstᶜ   : A×B →ᶜ A}
+     {sndᶜ   : A×B →ᶜ B}
+     {f      : X →ᶜ A}
+     {g      : X →ᶜ B}
+     (u!     : X →ᶜ A×B)
+     (fst-u! : fstᶜ ∘ᶜ u! ≡ f)
+     (snd-u! : sndᶜ ∘ᶜ u! ≡ g)
+     where
+     1-ProductDiagram = fst-u! , snd-u!
+
+  module ProductDiagram
+     {A B A×B : Objᶜ}
+     {fstᶜ : A×B →ᶜ A}
+     {sndᶜ : A×B →ᶜ B}
+     {<_,_>ᶜ : ∀ {X} → X →ᶜ A → X →ᶜ B → X →ᶜ A×B}
+     (fst-<,> : ∀ {X} {f : X →ᶜ A} {g : X →ᶜ B}
+                → fstᶜ ∘ᶜ < f , g >ᶜ ≡ f)
+     (snd-<,> : ∀ {X} {f : X →ᶜ A} {g : X →ᶜ B}
+                → sndᶜ ∘ᶜ < f , g >ᶜ ≡ g)
+     (<,>-uniq! : ∀ {A B X : Objᶜ} {f : X →ᶜ A×B}
+                  → < fstᶜ ∘ᶜ f , sndᶜ ∘ᶜ f >ᶜ ≡ f)
+     where
+
+     module _ {X} {f : X →ᶜ A} {g : X →ᶜ B} where
+        1-productDiagram = 1-ProductDiagram < f , g >ᶜ fst-<,> snd-<,>
 
   _∘ᵖ_ : {A B C : Objᵖ} → (B →ᵖ C) → (A →ᵖ B) → (A →ᵖ C)
   (f , ☐f) ∘ᵖ (g , ☐g) = (λ n → f n ∘ᶜ g n)
@@ -191,11 +237,9 @@ module Presheaf
                → fstᶜ ∘ᶜ < f , g >ᶜ ≡ f)
     (snd-<,> : ∀ {A B C} {f : A →ᶜ B} {g : A →ᶜ C}
                → sndᶜ ∘ᶜ < f , g >ᶜ ≡ g)
-    -- η-rule
-    (<fst,snd> : ∀ {A B} → < fstᶜ , sndᶜ >ᶜ ≡ idᶜ {A ×ᶜ B})
     -- universal property
-    (<,>-∘ : ∀ {A B C X} {f₀ : A →ᶜ B} {f₁ : A →ᶜ C} {g : X →ᶜ A}
-             → < f₀ , f₁ >ᶜ ∘ᶜ g ≡ < f₀ ∘ᶜ g , f₁ ∘ᶜ g >ᶜ)
+    (<,>-uniq! : ∀ {A B X : Objᶜ} {f : X →ᶜ (A ×ᶜ B)}
+                 → < fstᶜ ∘ᶜ f , sndᶜ ∘ᶜ f >ᶜ ≡ f)
     where
 
     firstᶜ : ∀ {A B C} → A →ᶜ B → (A ×ᶜ C) →ᶜ (B ×ᶜ C)
@@ -211,7 +255,16 @@ module Presheaf
         ≡<_,_> : f ≡ f' → g ≡ g' → < f , g >ᶜ ≡ < f' , g' >ᶜ
         ≡< p , q > = ap (λ f → < f , g >ᶜ) p ∙ ap (λ g → < f' , g >ᶜ) q
 
+    module _ {A B C X} {f₀ : A →ᶜ B} {f₁ : A →ᶜ C} {g : X →ᶜ A} where
+        <,>-∘ : < f₀ , f₁ >ᶜ ∘ᶜ g ≡ < f₀ ∘ᶜ g , f₁ ∘ᶜ g >ᶜ
+        <,>-∘ = ! <,>-uniq! ∙ ≡< ! ∘-assocᶜ ∙ ap-∘ᶜ fst-<,>
+                               , ! ∘-assocᶜ ∙ ap-∘ᶜ snd-<,> >
+
     module _ {A B} where
+        -- η-rule
+        <fst,snd> : < fstᶜ , sndᶜ >ᶜ ≡ idᶜ {A ×ᶜ B}
+        <fst,snd> = ≡< ! ∘-idᶜ , ! ∘-idᶜ > ∙ <,>-uniq!
+
         <fst,id∘snd> : < fstᶜ , idᶜ ∘ᶜ sndᶜ >ᶜ ≡ idᶜ {A ×ᶜ B}
         <fst,id∘snd> = ≡< idp , id-∘ᶜ > ∙ <fst,snd>
 
