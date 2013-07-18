@@ -1,3 +1,10 @@
+*.agdai
+.*.agda.vim
+*.swp
+*~
+\#*\#
+/.redo/
+
 dist
 cabal-dev
 *.o
