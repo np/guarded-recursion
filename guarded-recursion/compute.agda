@@ -12,6 +12,7 @@ Beware of non-termination!
 -}
 
 open import guarded-recursion.prelude
+  renaming (O to zero; S to suc)
 
 module guarded-recursion.compute where
 

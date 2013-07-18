@@ -1,5 +1,6 @@
 -- broken since the clocks are not supposed to be freely instantiable
 open import guarded-recursion.prelude
+  renaming (O to zero; S to suc)
 open Coe
 module guarded-recursion.clocks
     (Clk : ★)

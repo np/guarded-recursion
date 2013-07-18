@@ -2,6 +2,7 @@
 module guarded-recursion.embedding where
 
 open import guarded-recursion.prelude
+  renaming (O to zero; S to suc)
 open Coe
 
 module M
