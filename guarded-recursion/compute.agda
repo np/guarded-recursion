@@ -17,7 +17,7 @@ open import Data.Nat using (ℕ; zero; suc)
 open import Data.Unit using (Hidden; reveal; hide)
 open import Data.Product using (_×_; Σ; _,_; proj₁; proj₂)
 
-module guarded-rec-data where
+module guarded-recursion.compute where
 
 infixl 6 _⊛_
 

@@ -1,5 +1,5 @@
 -- Axiomatic embedding of guarded recursion in Agda
-module guarded-rec where
+module guarded-recursion.embedding where
 
 open import Level using () renaming (zero to ₀; suc to ↑)
 open import Function using (id; _∘_)
