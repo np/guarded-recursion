@@ -1,3 +1,4 @@
+-- Axiomatic embedding of guarded recursion in Agda
 module guarded-rec where
 
 open import Level using () renaming (zero to ₀; suc to ↑)
