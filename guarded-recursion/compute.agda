@@ -11,17 +11,34 @@ By the same token we give a definitional equalities to fix as well.
 Beware of non-termination!
 -}
 
-open import Relation.Binary.PropositionalEquality using (_≡_; refl; sym; subst)
-open import Function using (id; _∘_)
-open import Data.Nat using (ℕ; zero; suc)
-open import Data.Unit using (Hidden; reveal; hide)
-open import Data.Product using (_×_; Σ; _,_; proj₁; proj₂)
+open import guarded-recursion.prelude
 
 module guarded-recursion.compute where
 
-infixl 6 _⊛_
+-- Same as in prelude but type-in-type
+module Coe₀ where
+    coe : {A B : ★} → A ≡ B → A → B
+    coe = transport id
 
-★ = Set
+    coe! : {A B : ★} → A ≡ B → B → A
+    coe! = transport id ∘ !
+
+    module _ {A : ★} {P Q : A → ★} (p : P ≡ Q) {x} where
+        coe₁ : P x → Q x
+        coe₁ = transport (λ P → P x) p
+
+        coe₁! : Q x → P x
+        coe₁! = transport (λ P → P x) (! p)
+
+    module _ {A : ★} {B : ★} {R S : A → B → ★} (p : R ≡ S) {x y} where
+        coe₂ : R x y → S x y
+        coe₂ = transport (λ R → R x y) p
+
+        coe₂! : S x y → R x y
+        coe₂! = transport (λ R → R x y) (! p)
+open Coe₀
+
+infixl 6 _⊛_
 
 data ▹_ : ★ → ★
 
@@ -49,10 +66,10 @@ map▹ f x = next f ⊛ x
 private
   module Unused where
     by-computation : ∀ {A} {B : A → ★} {x} → ▸ (next B ⊛ x) ≡ ▹ (B (run x))
-    by-computation = refl
+    by-computation = idp
 
     const⊛ : ∀ {A} {X : ★} {x : ▹ X} → ▸ (next (λ _ → A) ⊛ x) ≡ ▹ A
-    const⊛ = refl
+    const⊛ = idp
 
     -- useless: the dependent version is just as fine
     _⊛′_ : ∀ {A B} → ▹ (A → B) → ▹ A → ▹ B
@@ -66,7 +83,7 @@ zip : ∀ {A} {B : A → ★} → Σ (▹ A) (▸F B) → ▹ Σ A B
 zip (x , y) = map▹ _,_ x ⊛ y
 
 unzip : ∀ {A} {B : A → ★} → ▹ Σ A B → Σ (▹ A) (▸F B)
-unzip p = map▹ proj₁ p , map▹ proj₂ p
+unzip p = map▹ fst p , map▹ snd p
 
 module M
    (fix      : ∀ {A} → (▹ A → A) → A)
@@ -77,16 +94,16 @@ module M
   S A = fix (λ X → A × ▸ X)
 
   rollS : ∀ {A} → A × ▹ (S A) → S A
-  rollS = subst id (sym (fix-rule _))
+  rollS = coe! (fix-rule _)
 
   unS : ∀ {A} → S A → A × ▹ (S A)
-  unS = subst id (fix-rule _)
+  unS = coe (fix-rule _)
 
   hd : ∀ {A} → S A → A
-  hd = proj₁ ∘ unS
+  hd = fst ∘ unS
 
   tl : ∀ {A} → S A → ▹ S A
-  tl = proj₂ ∘ unS
+  tl = snd ∘ unS
 
   infixl 4 _∷_
   _∷_ : ∀ {A} → A → ▹ S A → S A
@@ -99,10 +116,10 @@ module M
   B = fix BF
 
   rollB : ∀ {A} {xs ys : S A} → BF (next B) xs ys → B xs ys
-  rollB {xs = xs} {ys} = subst (λ B → B xs ys) (sym (fix-rule BF))
+  rollB = coe₂! (fix-rule BF)
 
   B-reflF : ∀ {A} → ▹((xs : S A) → B xs xs) → (xs : S A) → B xs xs
-  B-reflF ▹BR xs = rollB (refl , ▹BR ⊛ tl xs)
+  B-reflF ▹BR xs = rollB (idp , ▹BR ⊛ tl xs)
 
   -- Reflexivity of the Bisimilarity relation
   -- Thanks to computation at the level of types this definition nicely
@@ -165,7 +182,7 @@ module HiddenFix {A} (f : ▹ A → A) where
     fix = hide f (next (reveal fix))
 
     fix-rule : reveal fix ≡ f (next (reveal fix))
-    fix-rule = refl {_} {A} {reveal fix}
+    fix-rule = idp {_} {A} {reveal fix}
 
 open HiddenFix
 open M (reveal ∘ fix) fix-rule

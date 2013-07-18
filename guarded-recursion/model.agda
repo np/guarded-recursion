@@ -1,25 +1,7 @@
-open import Data.Nat
-  using (ℕ; zero; suc; _+_)
-open import Data.Product
-  using (Σ; _,_)
-  renaming (proj₁ to fst; proj₂ to snd)
-{-
--- using agda-nplib
-open import Relation.Binary.PropositionalEquality.NP
-  using (_≡_; _∙_; !; ap; idp)
--}
--- using stdlib only
-open import Relation.Binary.PropositionalEquality
-  using (_≡_; trans)
-  renaming (sym to !; refl to idp; cong to ap)
+open import guarded-recursion.prelude
+              renaming (★ to Type)
 
 module guarded-recursion.model where
-
--- using stdlib only
-infixr 8 _∙_
-_∙_ = trans
-
-Type = Set
 
 {- not using it yet
 postulate

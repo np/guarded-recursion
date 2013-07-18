@@ -1,8 +1,6 @@
 -- broken since the clocks are not supposed to be freely instantiable
-open import Function
-open import Data.Product
-open import Relation.Binary.PropositionalEquality
-open import guarded-recursion.embedding
+open import guarded-recursion.prelude
+open Coe
 module guarded-recursion.clocks
     (Clk : ★)
     (▹ : ∀ {a} → Clk → Set a → Set a)
@@ -28,7 +26,7 @@ module guarded-recursion.clocks
     where
 
     roll▹′ : ∀ {κ a} {A : Set a} → ▹ κ A → ▹′ κ (next A)
-    roll▹′ = coe (sym ▹′-rule)
+    roll▹′ = coe! ▹′-rule
 
     un▹′ : ∀ {κ a} {A : Set a} → ▹′ κ (next A) → ▹ κ A
     un▹′ = coe ▹′-rule
@@ -51,7 +49,7 @@ module guarded-recursion.clocks
     -}
 
     roll : ∀ {κ a f} → f (next (fix f)) → fix {κ} {A = Set a} f
-    roll = coe (sym fix-rule)
+    roll = coe! fix-rule
 
     {-
     μ-rule : ∀ {κ a} f → μ {a} f ≡ f (▹ κ (μ f))
@@ -68,13 +66,13 @@ module guarded-recursion.clocks
     un₁ = coe₁ fix-rule
 
     roll₁ : ∀ {κ a b} {A : Set a} {f x} → f (next (fix f)) x → fix {κ} {A = A → Set b} f x
-    roll₁ = coe₁ (sym fix-rule)
+    roll₁ = coe₁! fix-rule
 
     un₂ : ∀ {κ a b} {A : Set a} {B : Set b} {c f x y} → fix {κ} {A = A → B → Set c} f x y → f (next (fix f)) x y
     un₂ = coe₂ fix-rule
 
     roll₂ : ∀ {κ a b} {A : Set a} {B : Set b} {c f x y} → f (next (fix f)) x y → fix {κ} {A = A → B → Set c} f x y
-    roll₂ = coe₂ (sym fix-rule)
+    roll₂ = coe₂! fix-rule
 
     map▹ : ∀ {κ a b} {A : Set a} {B : Set b} → (A → B) → ▹ κ A → ▹ κ B
     map▹ f ▹x = next f ⊛ ▹x

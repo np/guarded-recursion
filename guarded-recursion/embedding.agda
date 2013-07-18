@@ -1,41 +1,8 @@
 -- Axiomatic embedding of guarded recursion in Agda
 module guarded-recursion.embedding where
 
-open import Level using () renaming (zero to ₀; suc to ↑)
-open import Function using (id; _∘_)
-open import Data.Nat using (ℕ; zero; suc)
-open import Data.Bool using (Bool; if_then_else_)
-open import Data.Maybe using (Maybe; nothing; just)
-open import Data.Unit using (⊤; Hidden; Unit; hide; reveal)
-open import Data.Product using (_×_; _,_; proj₁; proj₂; curry)
-open import Relation.Binary using (Reflexive)
-open import Relation.Binary.PropositionalEquality
-              using (_≡_; subst; refl; sym; trans; cong)
-import Relation.Binary.PropositionalEquality.TrustMe as UnsafeButPlease
-
-ℕ² = ℕ × ℕ
-
--- Let's rename "Set₀" as "★" to avoid confusion with set-theory
-★ = Set
-
--- Let's rename "Set ℓ" as "★_ ℓ" to avoid confusion with set-theory
-★_ : ∀ ℓ → Set (↑ ℓ)
-★_ ℓ = Set ℓ
-
-Endo : ∀ {a} → ★_ a → ★_ a
-Endo A = A → A
-
-Fix : ∀ {a} → ★_ a → ★_ a
-Fix X = (X → X) → X
-
-coe : ∀ {ℓ} {A B : ★_ ℓ} → A ≡ B → A → B
-coe = subst id
-
-coe₁ : ∀ {a ℓ} {A : ★_ a} {P Q : A → ★_ ℓ} → P ≡ Q → ∀ {x} → P x → Q x
-coe₁ pf {x} = subst (λ P → P x) pf
-
-coe₂ : ∀ {a b ℓ} {A : ★_ a} {B : ★_ b} {R S : A → B → ★_ ℓ} → R ≡ S → ∀ {x y} → R x y → S x y
-coe₂ pf {x} {y} = subst (λ R → R x y) pf
+open import guarded-recursion.prelude
+open Coe
 
 module M
     (▹_ : ∀ {a} → ★_ a → ★_ a)
@@ -61,7 +28,7 @@ module M
     where
 
     roll▸ : ∀ {a} {A : ★_ a} → ▹ A → ▸ (next A)
-    roll▸ = coe (sym ▸-rule)
+    roll▸ = coe! ▸-rule
 
     un▸ : ∀ {a} {A : ★_ a} → ▸ (next A) → ▹ A
     un▸ = coe ▸-rule
@@ -79,28 +46,28 @@ module M
     un = coe fix-rule
 
     unμ : ∀ {a} f → μ {a} f → f (▹ μ f)
-    unμ {a} f x rewrite sym (▸-rule {A = μ f}) = un x
+    unμ {a} f x rewrite ! (▸-rule {A = μ f}) = un x
 
     roll : ∀ {a f} → f (next (fix f)) → fix {A = ★_ a} f
-    roll = coe (sym fix-rule)
+    roll = coe! fix-rule
 
     μ-rule : ∀ {a} f → μ {a} f ≡ f (▹ μ f)
-    μ-rule f = trans fix-rule (cong f (▸-rule {A = μ f}))
+    μ-rule f = fix-rule ∙ ap f (▸-rule {A = μ f})
 
     rollμ : ∀ {a} f → f (▹ μ f) → μ {a} f
-    rollμ f = subst id (sym (μ-rule f))
+    rollμ f = coe! (μ-rule f)
 
     un₁ : ∀ {a b} {A : ★_ a} {f x} → fix {A = A → ★_ b} f x → f (next (fix f)) x
     un₁ = coe₁ fix-rule
 
     roll₁ : ∀ {a b} {A : ★_ a} {f x} → f (next (fix f)) x → fix {A = A → ★_ b} f x
-    roll₁ = coe₁ (sym fix-rule)
+    roll₁ = coe₁! fix-rule
 
     un₂ : ∀ {a b} {A : ★_ a} {B : ★_ b} {c f x y} → fix {A = A → B → ★_ c} f x y → f (next (fix f)) x y
     un₂ = coe₂ fix-rule
 
     roll₂ : ∀ {a b} {A : ★_ a} {B : ★_ b} {c f x y} → f (next (fix f)) x y → fix {A = A → B → ★_ c} f x y
-    roll₂ = coe₂ (sym fix-rule)
+    roll₂ = coe₂! fix-rule
 
     map▹ : ∀ {a b} {A : ★_ a} {B : ★_ b} → (A → B) → ▹ A → ▹ B
     map▹ f ▹x = next f ⊛′ ▹x
@@ -151,7 +118,7 @@ module M
         μid = μ id
 
         μid-rule : μid ≡ ▹ μid
-        μid-rule = trans fix-rule (▸-rule {A = μ id})
+        μid-rule = fix-rule ∙ ▸-rule {A = μ id}
 
         ω : μid
         ω = fix (rollμ id)
@@ -226,19 +193,19 @@ module M
         ▹ω-inh' : ∀ {A : ★} {x : A} (F : Endo (A → ★)) → (▸ (next (μ₁ F) ⊛′ next x) → μ₁F F (next (μ₁ F)) x) → μ₁ F x
         ▹ω-inh' {A} {x} F f = fix helper
           where helper : _ → _
-                helper self = roll₁ (f (coe (sym (cong ▸ (next⊛next (μ₁ F) x))) (roll▸ self)))
+                helper self = roll₁ (f (coe! (ap ▸ (next⊛next (μ₁ F) x)) (roll▸ self)))
 
         ▹ω-inh : ∀ {A} → μ₁id A
-        -- ▹ω-inh {A} = fix λ self → roll₁ (coe (sym (cong ▸ (next⊛next μ₁id A))) (roll▸ self))
-        ▹ω-inh {A} = betterfix₁ id (λ self → coe (sym (cong ▸ (next⊛next μ₁id A))) (roll▸ self))
+        -- ▹ω-inh {A} = fix λ self → roll₁ (coe! (ap ▸ (next⊛next μ₁id A)) (roll▸ self))
+        ▹ω-inh {A} = betterfix₁ id (λ self → coe! (ap ▸ (next⊛next μ₁id A)) (roll▸ self))
 
-        -- ▹ω-inh {A} = fix λ self → {!!} -- (coe (sym (cong ▸ (next⊛next μ₁idω A))) (roll▸ self))
+        -- ▹ω-inh {A} = fix λ self → {!!} -- (coe! (ap ▸ (next⊛next μ₁idω A)) (roll▸ self))
 
     fix2 : ∀ {a} {A : ★_ a} → (▹ A → A) → A
     fix2 f = fix (f ∘ next ∘ f)
 
     fix≡fix2 : ∀ {a} {A : ★_ a} (f : ▹ A → A) → fix f ≡ fix2 f
-    fix≡fix2 f = fix-uniq (fix f) (f ∘ next ∘ f) (trans fix-rule (cong (f ∘ next) fix-rule))
+    fix≡fix2 f = fix-uniq (fix f) (f ∘ next ∘ f) (fix-rule ∙ ap (f ∘ next) fix-rule)
 
     module Streams where
         F : ★ → ★ → ★
@@ -271,10 +238,10 @@ module M
         rollS^ n = rollμ (F^ n _)
 
         hd : ∀ {A} → S A → A
-        hd = proj₁ ∘ unS
+        hd = fst ∘ unS
 
         tl : ∀ {A} → S A → ▹ S A
-        tl = proj₂ ∘ unS
+        tl = snd ∘ unS
 
         cons : ∀ {A} n → A → ▹^ n (▹ (S^ n A)) → S^ n A
         cons n x xs = rollS^ n (x , xs)
@@ -304,7 +271,7 @@ module M
             mapS2f' self = mapSf (next (mapSf self))
 
             mapS2f≡mapS2f' : mapS2f ≡ mapS2f'
-            mapS2f≡mapS2f' = refl
+            mapS2f≡mapS2f' = idp
 
             mapS2 : S A → S B
             mapS2 = fix mapS2f
@@ -313,13 +280,13 @@ module M
             mapS2' = fix mapS2f'
 
             mapS2≡mapS2' : mapS2 ≡ mapS2'
-            mapS2≡mapS2' = refl
+            mapS2≡mapS2' = idp
 
             mapS2'' : S A → S B
             mapS2'' = fix2 mapSf
 
             mapS2≡mapS2'' : mapS2 ≡ mapS2''
-            mapS2≡mapS2'' = refl
+            mapS2≡mapS2'' = idp
 
             mapS≡mapS2 : mapS ≡ mapS2
             mapS≡mapS2 = fix≡fix2 mapSf
@@ -346,7 +313,7 @@ module M
         nats2 = fix λ self → 0 ∷ map▹ (mapS2 suc) self
 
         nats≡nats2 : nats ≡ nats2
-        nats≡nats2 rewrite mapS≡mapS2 suc = refl
+        nats≡nats2 rewrite mapS≡mapS2 suc = idp
 
         arrow : ▹ ℕ
         arrow = ‼ 1 nats
@@ -363,7 +330,7 @@ module M
             _≈_ = fix ≈F
 
             ≈-tail : ∀ {xs ys : S A} → _≈_ (xs , ys) → ▸ ((map▹ curry (next _≈_) ⊛′ tl xs) ⊛′ tl ys)
-            ≈-tail pf = proj₂ (un₁ pf)
+            ≈-tail pf = snd (un₁ pf)
 
             {- Does not work yet
             ≈-refl : Reflexive (curry _≈_)
@@ -407,13 +374,13 @@ module M
         mapS : ∀ {A B} → (A → B) → S A → S B
         mapS {A} {B} f = unfoldS (mapF f id ∘ unS)
 
-        filterF : ∀ {A X} → (A → Bool) → F A X → F A X
+        filterF : ∀ {A X} → (A → 𝟚) → F A X → F A X
         filterF f done         = done
         filterF f (skip xs)    = skip xs
         filterF f (yield x xs) = if f x then yield x xs
                                         else skip xs
 
-        filterS : ∀ {A} → (A → Bool) → S A → S A
+        filterS : ∀ {A} → (A → 𝟚) → S A → S A
         filterS f = unfoldS (filterF f ∘ unS)
 
 module FuelBased where
@@ -422,15 +389,15 @@ module FuelBased where
     fix (suc n) f = f (fix n f)
 
     fix-rule : ∀ {a} {A : ★_ a} (n : ℕ) {f : A → A} → fix n f ≡ f (fix n f)
-    fix-rule zero        = UnsafeButPlease.trustMe
-    fix-rule (suc n) {f} = cong f (fix-rule n)
+    fix-rule zero        = ThisIsUnsafeButPlease.trustMe
+    fix-rule (suc n) {f} = ap f (fix-rule n)
 
     fix-uniq : ∀ {a} {A : ★_ a} (n : ℕ) (u : A) f → u ≡ f u → u ≡ fix n f
-    fix-uniq zero    u f pf = UnsafeButPlease.trustMe
-    fix-uniq (suc n) u f pf = trans pf (cong f (fix-uniq n u f pf))
+    fix-uniq zero    u f pf = ThisIsUnsafeButPlease.trustMe
+    fix-uniq (suc n) u f pf = pf ∙ ap f (fix-uniq n u f pf)
 
-    module I (n : ℕ) = M id id id refl (fix n) (fix-rule n) id id
-                         (fix-uniq n) (λ _ _ → refl)
+    module I (n : ℕ) = M id id id idp (fix n) (fix-rule n) id id
+                         (fix-uniq n) (λ _ _ → idp)
 
 module HiddenFix {a} {A : ★_ a} (f : A → A) where
     -- This definition is not intended to termination-check.
@@ -440,21 +407,21 @@ module HiddenFix {a} {A : ★_ a} (f : A → A) where
     fix = hide f (reveal fix)
 
     fix-rule : reveal fix ≡ f (reveal fix)
-    fix-rule = refl {a} {A} {reveal fix}
+    fix-rule = idp {a} {A} {reveal fix}
 
     -- This definition is not intended to termination-check.
     -- Use with care it's really easy to make the type-checker loop.
     {-# NO_TERMINATION_CHECK #-}
     fix-uniq : (u : A) → u ≡ f u → u ≡ reveal fix
-    fix-uniq u pf = trans pf (trans (cong f (fix-uniq u pf)) (sym fix-rule))
+    fix-uniq u pf = pf ∙ ap f (fix-uniq u pf) ∙ ! fix-rule
 
 module Test where
   open HiddenFix
-  open M id id id refl (reveal ∘ fix) (λ {_} {_} {f} → fix-rule f) id id
-                 (λ {_} {_} u f → fix-uniq f u) (λ _ _ → refl) public
+  open M id id id idp (reveal ∘ fix) (λ {_} {_} {f} → fix-rule f) id id
+                 (λ {_} {_} u f → fix-uniq f u) (λ _ _ → idp) public
   open Streams
   two : map▹ hd (tl nats) ≡ 1
-  two = refl
+  two = idp
 
 -- -}
 -- -}
