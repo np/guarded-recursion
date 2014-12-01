@@ -1,0 +1,277 @@
+grammar
+G {{ tex \Gamma }}, D {{ tex \Delta }}, T {{ tex \Theta }} :: 'Ctx_' ::= {{ com contexts }}
+  | ()           ::  :: Nil {{ com empty }}
+  | G . A        ::  :: Ext {{ com extension }}
+
+A, B, C :: 'Ty_' ::= {{ com types }}
+  | Nat          ::  :: Nat {{ com type of natural numbers }}
+  | A s          ::  :: subst {{ com substitute in types }}
+  | Pi A B       ::  :: Pi    {{ com type of dependent functions }}
+  | Sg A B       ::  :: Sg    {{ com type of dependent pairs }}
+  | Let s in A   ::  :: Let   {{ com type of effectful computations }}
+  | O A          ::  :: later
+  | [] B * t     ::  :: square
+  | ( A )        :: M:: paren  {{ icho [[A]] }}
+
+s {{ tex \sigma }}, d {{ tex \delta }}, n {{ tex \nu }} :: 'Sub_' ::= {{ com substitutions }}
+  | 1            ::  :: one   {{ com identity substitution }} {{ tex \textbf{1} }}
+  | s d          ::  :: comp  {{ com substitutions composition }}
+  | p            ::  :: p     {{ com first substitution projection }}
+  | ( s , u )    ::  :: comma {{ com substitution extension }}
+  | [ t ]        ::  :: subst1
+  | ( s )        :: M:: paren  {{ icho [[s]] }}
+
+a, b, t, u, v, w, z :: 'Tm_' ::= {{ com terms }}
+  | t s          ::  :: subst {{ com substitute in terms }}
+  | q            ::  :: q     {{ com second substitution projection }}
+  | \ b          ::  :: lam   {{ com function definition }}
+  | ( t , v )    ::  :: comma {{ com pair definition }}
+  | app( w , t ) ::  :: app   {{ com function application }} {{ tex \textbf{app}([[w]],\;[[t]]) }}
+  | fst z        ::  :: fst   {{ com first pair projection }}
+  | snd z        ::  :: snd   {{ com second pair projection }}
+  | let s in t   ::  :: let   {{ com combining effects }}
+  | pure t       ::  :: pure
+  | t * u        ::  :: star
+  | ( t )        :: M:: paren  {{ icho [[t]] }}
+
+terminals :: 'terminals_' ::=
+  | \            ::  :: lambda     {{ tex \lambda }}
+  | -->          ::  :: red        {{ tex \longrightarrow }}
+  | |-           ::  :: turnstile  {{ tex \vdash }}
+  | Nat          ::  :: nat        {{ tex \mathbb{N} }}
+  | Pi           ::  :: pi         {{ tex \Pi }}
+  | Sg           ::  :: sg         {{ tex \Sigma }}
+  | []           ::  :: box        {{ tex \square }}
+  | O            ::  :: later      {{ tex \bigcirc }}
+
+formula :: 'formula_' ::=
+  | judgement                                  ::   :: judgement
+  | formula1 hidden                            ::   :: hidden {{ tex }}
+
+defns
+Jtype :: '' ::=
+
+defn
+  G |- :: :: Cxt :: Cxt_ by
+
+  ----- :: nil
+  () |-
+
+  G |-
+  G |- A
+  -------- :: ext
+  G . A |-
+
+defn
+  G |- A :: :: Typ :: Typ_ by
+
+  -------- :: nat
+  G |- Nat
+
+  G |-      hidden
+  D |-      hidden
+  s : D --> G
+  G |- A
+  --------------- :: Let
+  D |- Let s in A
+
+  G |-      hidden
+  D |-      hidden
+  G |- A
+  s : D --> G
+  -------------- :: subst
+  D |- A s
+
+  G   |-     hidden
+  G   |- A   hidden
+  G.A |- B
+  -------------- :: pi
+  G   |- Pi A B
+
+  G   |-    hidden
+  G   |- A  hidden
+  G.A |- B
+  -------------- :: sg
+  G   |- Sg A B
+
+defn
+  s : D --> G :: :: Sub :: Sub_ by
+
+  G |-
+  ----------- :: one
+  1 : G --> G
+
+  D |- hidden
+  G |- hidden
+  T |- hidden
+  s : D --> G
+  d : T --> D
+  ------------- :: comp
+  s d : T --> G
+
+  G |- hidden
+  G |- A
+  ------------- :: p
+  p : G.A --> G
+
+  D |- hidden
+  G |- hidden
+  G |- A hidden
+  s : D --> G
+  D |- u : A s
+  ------------------- :: comma
+  (s , u) : D --> G.A
+
+defn
+  G |- t : A :: :: Tm :: Tm_ by
+
+  G |-        hidden
+  D |-        hidden
+  G |- A      hidden
+  G |- t : A
+  s : D --> G
+  ------------------- :: subst
+  D |- t s : A s
+
+  G |-        hidden
+  D |-        hidden
+  G |- A      hidden
+  s : D --> G
+  G |- t : A
+  ---------------------------- :: let
+  D |- let s in t : Let s in A
+
+  G |-  hidden
+  G |- A
+  ----------------- :: q
+  G.A |- q : A p
+
+  G |-             hidden
+  G |- A           hidden
+  G.A |- B
+  G.A |- b : B
+  ----------------- :: lam
+  G |- \b : Pi A B
+
+  G |-             hidden
+  G |- A           hidden
+  G.A |- B
+  G |- t : A
+  G |- v : B [ t ]
+  ------------------- :: comma
+  G |- (t,v) : Sg A B
+
+  G |-             hidden
+  G |- A           hidden
+  G.A |- B
+  G |- w : Pi A B
+  G |- t : A
+  ---------------------- :: app
+  G |- app(w,t) : B [ t ]
+
+  G |-             hidden
+  G |- A           hidden
+  G.A |- B
+  G |- z : Sg A B
+  ---------------- :: fst
+  G |- fst z : A
+
+  G |-             hidden
+  G |- A           hidden
+  G.A |- B
+  G |- z : Sg A B
+  ------------------------ :: snd
+  G |- snd z : B [ fst z ]
+
+defn
+  s = d :: :: Sub_eq :: Sub_eq_ by
+
+  ------- :: left_id
+  1 s = s
+
+  ------- :: right_id
+  s 1 = s
+
+  --------------- :: comp
+  (s d)n = s(d n)
+
+  ------------ :: subst1
+  [u] = (1, u)
+
+  --------------------- :: dist
+  (s, u) d = (s d, u d)
+
+  ------------- :: p
+  p (s, u) = s
+
+  ----------- :: pq
+  (p , q) = 1
+
+defn
+  A = B :: :: Ty_eq :: Ty_eq_ by
+
+  ------- :: right_id
+  A 1 = A
+
+  ----------------- :: comp
+  (A s) d = A (s d)
+
+  -------------------------------- :: Pi
+  (Pi A B)s = Pi (A s) (B (s p,q))
+
+  -------------------------------- :: Sg
+  (Sg A B)s = Sg (A s) (B (s p,q))
+
+ ----------------- :: later
+  O A = Let 1 in A
+
+  ----------------------------------- :: square
+  [] B * t = Let (1, let 1 in t) in B
+
+defn
+  t = u :: :: Tm_eq :: Tm_eq_ by
+
+  ------- :: right_id
+  u 1 = u
+
+  ----------------- :: comp
+  (u s) d = u (s d)
+
+  ------------ :: q
+  q(s , u) = u
+
+  ----------------------- :: subst_lam
+  (\ b)s = \(b (s p , q))
+
+  -------------------------- :: subst_app
+  app(w,u) d = app(w d, u d)
+
+  --------------------- :: beta_app
+  app(\b , u) = b [ u ]
+
+  ----------------- :: eta_lam
+  w = \(app(w , q))
+
+  --------------------- :: subst_fst
+  (fst t) d = fst (t d)
+
+  --------------------- :: subst_snd
+  (snd t) d = snd (t d)
+
+  -------------------- :: subst_pair
+  (t,v) d = (t d, v d)
+
+  ------------- :: beta_fst
+  fst (t,v) = t
+
+  ------------- :: beta_snd
+  snd (t,v) = v
+
+  ------------------ :: beta_pair
+  (fst z, snd z) = z
+
+  ------------------- :: pure
+  pure t = let 1 in t
+
+  ------------------------------------ :: star
+  t * u = let ((1, t), u) in app(q p, q)
