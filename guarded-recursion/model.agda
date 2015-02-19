@@ -1,5 +1,4 @@
 open import guarded-recursion.prelude
-              renaming (★ to Type; ★_ to Type_)
 
 module guarded-recursion.model where
 

@@ -1,4 +1,4 @@
-open import guarded-recursion.prelude renaming (★ to Type)
+open import guarded-recursion.prelude
 open import guarded-recursion.model
 
 -- Agda^{ω}^{op}

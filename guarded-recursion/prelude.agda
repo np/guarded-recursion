@@ -66,33 +66,33 @@ _∙_ = Relation.Binary.PropositionalEquality.trans
 
 ℕ² = ℕ × ℕ
 
--- Let's rename "Set₀" as "★" to avoid confusion with set-theory
-★ = Set
+-- Let's rename "Set₀" as "Type" to avoid confusion with set-theory
+Type = Set
 
--- Let's rename "Set ℓ" as "★_ ℓ" to avoid confusion with set-theory
-★_ : ∀ ℓ → Set (ₛ ℓ)
-★_ ℓ = Set ℓ
+-- Let's rename "Set ℓ" as "Type_ ℓ" to avoid confusion with set-theory
+Type_ : ∀ ℓ → Set (ₛ ℓ)
+Type_ ℓ = Set ℓ
 
--→- : ∀ {a b} → ★_ a → ★_ b → ★_ (a ⊔ b)
+-→- : ∀ {a b} → Type_ a → Type_ b → Type_ (a ⊔ b)
 -→- A B = A → B
 
-Endo : ∀ {a} → ★_ a → ★_ a
+Endo : ∀ {a} → Type_ a → Type_ a
 Endo A = A → A
 
-Fix : ∀ {a} → ★_ a → ★_ a
+Fix : ∀ {a} → Type_ a → Type_ a
 Fix X = (X → X) → X
 
 postulate
   funext : ∀ {a b}
-             {A : ★_ a} {B : A → ★_ b}
+             {A : Type_ a} {B : A → Type_ b}
              {f g : (x : A) → B x}
            → (∀ x → f x ≡ g x)
            → f ≡ g
 
-𝟘-elim-uniq! : ∀ {a} {A : ★_ a} {f : 𝟘 → A} → 𝟘-elim ≡ f
+𝟘-elim-uniq! : ∀ {a} {A : Type_ a} {f : 𝟘 → A} → 𝟘-elim ≡ f
 𝟘-elim-uniq! = funext (λ())
 
-[,]-uniq! : ∀ {a b c} {A : ★_ a} {B : ★_ b} {C : ★_ c}
+[,]-uniq! : ∀ {a b c} {A : Type_ a} {B : Type_ b} {C : Type_ c}
               {f : (A ⊎ B) → C}
             → [ f ∘ inl , f ∘ inr ] ≡ f
 [,]-uniq! = funext p
@@ -101,26 +101,26 @@ postulate
         p (inr _) = idp
 
 module Coe {ℓ} where
-    coe : {A B : ★_ ℓ} → A ≡ B → A → B
+    coe : {A B : Type_ ℓ} → A ≡ B → A → B
     coe = transport id
 
-    coe! : {A B : ★_ ℓ} → A ≡ B → B → A
+    coe! : {A B : Type_ ℓ} → A ≡ B → B → A
     coe! = transport id ∘ !
 
-    module _ {a} {A : ★_ a} {P Q : A → ★_ ℓ} (p : P ≡ Q) {x} where
+    module _ {a} {A : Type_ a} {P Q : A → Type_ ℓ} (p : P ≡ Q) {x} where
         coe₁ : P x → Q x
         coe₁ = transport (λ P → P x) p
 
         coe₁! : Q x → P x
         coe₁! = transport (λ P → P x) (! p)
 
-    module _ {a b} {A : ★_ a} {B : ★_ b} {R S : A → B → ★_ ℓ} (p : R ≡ S) {x y} where
+    module _ {a b} {A : Type_ a} {B : Type_ b} {R S : A → B → Type_ ℓ} (p : R ≡ S) {x y} where
         coe₂ : R x y → S x y
         coe₂ = transport (λ R → R x y) p
 
         coe₂! : S x y → R x y
         coe₂! = transport (λ R → R x y) (! p)
 
-[0:_1:_] : ∀ {a} {A : ★_ a} (a₀ a₁ : A) → 𝟚 → A
+[0:_1:_] : ∀ {a} {A : Type_ a} (a₀ a₁ : A) → 𝟚 → A
 [0: a₀ 1: a₁ ] 0₂ = a₀
 [0: a₀ 1: a₁ ] 1₂ = a₁

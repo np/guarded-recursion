@@ -6,50 +6,50 @@ open import guarded-recursion.prelude
 open Coe
 
 module M
-    (▹_ : ∀ {a} → ★_ a → ★_ a)
+    (▹_ : ∀ {a} → Type_ a → Type_ a)
 
-    (▸ : ∀ {a} → ▹ (★_ a) → ★_ a)
+    (▸ : ∀ {a} → ▹ (Type_ a) → Type_ a)
 
-    (next : ∀ {a} {A : ★_ a} → A → ▹ A)
+    (next : ∀ {a} {A : Type_ a} → A → ▹ A)
 
-    (▸-rule : ∀ {a} {A : ★_ a} → ▸ (next A) ≡ ▹ A)
+    (▸-rule : ∀ {a} {A : Type_ a} → ▸ (next A) ≡ ▹ A)
 
-    (fix      : ∀ {a} {A : ★_ a} → (▹ A → A) → A)
-    (fix-rule : ∀ {a} {A : ★_ a} {f : ▹ A → A} → fix f ≡ f (next (fix f)))
+    (fix      : ∀ {a} {A : Type_ a} → (▹ A → A) → A)
+    (fix-rule : ∀ {a} {A : Type_ a} {f : ▹ A → A} → fix f ≡ f (next (fix f)))
 
-    (_⊛′_ : ∀ {a b} {A : ★_ a} {B : ★_ b} → ▹ (A → B) → ▹ A → ▹ B)
-    (_⊛_ : ∀ {a b} {A : ★_ a} {B : A → ★_ b}
+    (_⊛′_ : ∀ {a b} {A : Type_ a} {B : Type_ b} → ▹ (A → B) → ▹ A → ▹ B)
+    (_⊛_ : ∀ {a b} {A : Type_ a} {B : A → Type_ b}
            → ▹ ((x : A) → B x) → (x : ▹ A) → ▸ (next B ⊛′ x))
 
-    (fix-uniq : ∀ {a} {A : ★_ a} (u : A) f → u ≡ f (next u) → u ≡ fix f)
+    (fix-uniq : ∀ {a} {A : Type_ a} (u : A) f → u ≡ f (next u) → u ≡ fix f)
 
-    (next⊛next : ∀ {a b} {A : ★_ a} {B : ★_ b} (f : A → B) (x : A)
+    (next⊛next : ∀ {a b} {A : Type_ a} {B : Type_ b} (f : A → B) (x : A)
                  → next f ⊛′ next x ≡ next (f x))
 
     where
 
-    roll▸ : ∀ {a} {A : ★_ a} → ▹ A → ▸ (next A)
+    roll▸ : ∀ {a} {A : Type_ a} → ▹ A → ▸ (next A)
     roll▸ = coe! ▸-rule
 
-    un▸ : ∀ {a} {A : ★_ a} → ▸ (next A) → ▹ A
+    un▸ : ∀ {a} {A : Type_ a} → ▸ (next A) → ▹ A
     un▸ = coe ▸-rule
 
-    ▹Fix : ∀ {a} → ★_ a → ★_ a
+    ▹Fix : ∀ {a} → Type_ a → Type_ a
     ▹Fix X = (▹ X → X) → X
 
-    ▹Endo : ∀ {a} → ★_ a → ★_ a
+    ▹Endo : ∀ {a} → Type_ a → Type_ a
     ▹Endo X = ▹ X → X
 
-    μ : ∀ {a} → Fix (★_ a)
+    μ : ∀ {a} → Fix (Type_ a)
     μ F = fix (F ∘ ▸)
 
-    un : ∀ {a f} → fix {A = ★_ a} f → f (next (fix f))
+    un : ∀ {a f} → fix {A = Type_ a} f → f (next (fix f))
     un = coe fix-rule
 
     unμ : ∀ {a} f → μ {a} f → f (▹ μ f)
     unμ {a} f x rewrite ! (▸-rule {A = μ f}) = un x
 
-    roll : ∀ {a f} → f (next (fix f)) → fix {A = ★_ a} f
+    roll : ∀ {a f} → f (next (fix f)) → fix {A = Type_ a} f
     roll = coe! fix-rule
 
     μ-rule : ∀ {a} f → μ {a} f ≡ f (▹ μ f)
@@ -58,64 +58,64 @@ module M
     rollμ : ∀ {a} f → f (▹ μ f) → μ {a} f
     rollμ f = coe! (μ-rule f)
 
-    un₁ : ∀ {a b} {A : ★_ a} {f x} → fix {A = A → ★_ b} f x → f (next (fix f)) x
+    un₁ : ∀ {a b} {A : Type_ a} {f x} → fix {A = A → Type_ b} f x → f (next (fix f)) x
     un₁ = coe₁ fix-rule
 
-    roll₁ : ∀ {a b} {A : ★_ a} {f x} → f (next (fix f)) x → fix {A = A → ★_ b} f x
+    roll₁ : ∀ {a b} {A : Type_ a} {f x} → f (next (fix f)) x → fix {A = A → Type_ b} f x
     roll₁ = coe₁! fix-rule
 
-    un₂ : ∀ {a b} {A : ★_ a} {B : ★_ b} {c f x y} → fix {A = A → B → ★_ c} f x y → f (next (fix f)) x y
+    un₂ : ∀ {a b} {A : Type_ a} {B : Type_ b} {c f x y} → fix {A = A → B → Type_ c} f x y → f (next (fix f)) x y
     un₂ = coe₂ fix-rule
 
-    roll₂ : ∀ {a b} {A : ★_ a} {B : ★_ b} {c f x y} → f (next (fix f)) x y → fix {A = A → B → ★_ c} f x y
+    roll₂ : ∀ {a b} {A : Type_ a} {B : Type_ b} {c f x y} → f (next (fix f)) x y → fix {A = A → B → Type_ c} f x y
     roll₂ = coe₂! fix-rule
 
-    map▹ : ∀ {a b} {A : ★_ a} {B : ★_ b} → (A → B) → ▹ A → ▹ B
+    map▹ : ∀ {a b} {A : Type_ a} {B : Type_ b} → (A → B) → ▹ A → ▹ B
     map▹ f ▹x = next f ⊛′ ▹x
 
     {-
     alternatively
-    _⊛′′_ : ∀ {a b} {A : ★_ a} {B : A → ★_ b} → ▹ ((x : A) → B x) → (x : A) → ▹ (B x)
+    _⊛′′_ : ∀ {a b} {A : Type_ a} {B : A → Type_ b} → ▹ ((x : A) → B x) → (x : A) → ▹ (B x)
     ▹f ⊛′′ x = map▹ (λ f → f x) ▹f
     -}
 
     {-
     alternatively
-    _$_ : ∀ {a b} {A : ★_ a} (B : A → ★_ b) → ▹ A → ▹ (★_ b)
+    _$_ : ∀ {a b} {A : Type_ a} (B : A → Type_ b) → ▹ A → ▹ (Type_ b)
     f $ ▹x = map▹ f ▹x
     -}
 
-    ▹^ : ∀ {a} → ℕ → ★_ a → ★_ a
+    ▹^ : ∀ {a} → ℕ → Type_ a → Type_ a
     ▹^ zero    A = A
     ▹^ (suc n) A = ▹ ▹^ n A
 
-    next^ : ∀ {a} {A : ★_ a} n → A → ▹^ n A
+    next^ : ∀ {a} {A : Type_ a} n → A → ▹^ n A
     next^ zero    x = x
     next^ (suc n) x = next (next^ n x)
 
-    map▹^ : ∀ {a b} {A : ★_ a} {B : ★_ b} n → (A → B) → ▹^ n A → ▹^ n B
+    map▹^ : ∀ {a b} {A : Type_ a} {B : Type_ b} n → (A → B) → ▹^ n A → ▹^ n B
     map▹^ zero    f = f
     map▹^ (suc n) f = map▹ (map▹^ n f)
 
 
     module SimpleStream where
-      F : ★ → ★ → ★
+      F : Type → Type → Type
       F A X = A × X
 
-      S : ★ → ★
+      S : Type → Type
       S A = μ (F A)
 
-    μ₁F' : ∀ {a} {A : ★_ a} → ((A → ▹ ★) → A → ★) → (▹(A → ★) → A → ★)
+    μ₁F' : ∀ {a} {A : Type_ a} → ((A → ▹ Type) → A → Type) → (▹(A → Type) → A → Type)
     μ₁F' F self = F (λ x → (self ⊛′ next x))
 
-    μ₁F : ∀ {a} {A : ★_ a} → ((A → ★) → A → ★) → (▹(A → ★) → A → ★)
+    μ₁F : ∀ {a} {A : Type_ a} → ((A → Type) → A → Type) → (▹(A → Type) → A → Type)
     μ₁F F self = F (λ x → ▸ (self ⊛′ next x))
 
-    μ₁ : ∀ {a} {A : ★_ a} → ((A → ★) → A → ★) → A → ★
+    μ₁ : ∀ {a} {A : Type_ a} → ((A → Type) → A → Type) → A → Type
     μ₁ F = fix (μ₁F F)
 
     module μId where
-        μid : ★
+        μid : Type
         μid = μ id
 
         μid-rule : μid ≡ ▹ μid
@@ -125,7 +125,7 @@ module M
         ω = fix (rollμ id)
 
     module CoNat where
-        Coℕ : ★
+        Coℕ : Type
         Coℕ = μ Maybe
 
         rollNat : Maybe (▹ Coℕ) → Coℕ
@@ -144,11 +144,11 @@ module M
         ω = fix su
 
     module Neg where
-        {- data X : ★ where
+        {- data X : Type where
              rollX : Fix X
                    : (X → X) → X
            -}
-        X : ★
+        X : Type
         X = μ Endo
 
         rollX : Endo (▹ X) → X
@@ -167,11 +167,11 @@ module M
         δ = λ x → (unX x) (next x)
 
     module Neg' where
-        {- data X : ★ where
+        {- data X : Type where
              c : Fix X
                : ((X → X) → X) → X
            -}
-        X : ★
+        X : Type
         X = μ Fix
 
         rollX : Fix (▹ X) → X
@@ -183,15 +183,15 @@ module M
     module μ₁Id where
         -- μ₁id = ▹∘▹∘…∘▹
         -- μ₁id A = ▹ (▹ … (▹ A))
-        μ₁id : ★ → ★
+        μ₁id : Type → Type
         μ₁id = μ₁ id
 
-        betterfix₁ : ∀ {a} {A : ★_ a} {x : A} (F : Endo (A → ★)) → (▹ μ₁ F x → μ₁F F (next (μ₁ F)) x) → μ₁ F x
+        betterfix₁ : ∀ {a} {A : Type_ a} {x : A} (F : Endo (A → Type)) → (▹ μ₁ F x → μ₁F F (next (μ₁ F)) x) → μ₁ F x
         betterfix₁ {a} {A} {x} F f = fix helper
           where helper : _ → _
                 helper self = roll₁ (f self)
 
-        ▹ω-inh' : ∀ {A : ★} {x : A} (F : Endo (A → ★)) → (▸ (next (μ₁ F) ⊛′ next x) → μ₁F F (next (μ₁ F)) x) → μ₁ F x
+        ▹ω-inh' : ∀ {A : Type} {x : A} (F : Endo (A → Type)) → (▸ (next (μ₁ F) ⊛′ next x) → μ₁F F (next (μ₁ F)) x) → μ₁ F x
         ▹ω-inh' {A} {x} F f = fix helper
           where helper : _ → _
                 helper self = roll₁ (f (coe! (ap ▸ (next⊛next (μ₁ F) x)) (roll▸ self)))
@@ -202,26 +202,26 @@ module M
 
         -- ▹ω-inh {A} = fix λ self → {!!} -- (coe! (ap ▸ (next⊛next μ₁idω A)) (roll▸ self))
 
-    fix2 : ∀ {a} {A : ★_ a} → (▹ A → A) → A
+    fix2 : ∀ {a} {A : Type_ a} → (▹ A → A) → A
     fix2 f = fix (f ∘ next ∘ f)
 
-    fix≡fix2 : ∀ {a} {A : ★_ a} (f : ▹ A → A) → fix f ≡ fix2 f
+    fix≡fix2 : ∀ {a} {A : Type_ a} (f : ▹ A → A) → fix f ≡ fix2 f
     fix≡fix2 f = fix-uniq (fix f) (f ∘ next ∘ f) (fix-rule ∙ ap (f ∘ next) fix-rule)
 
     module Streams where
-        F : ★ → ★ → ★
+        F : Type → Type → Type
         F A X = A × X
 
-        -- S : ★ → ★
+        -- S : Type → Type
         -- S A = μ (F A)
 
-        F^ : ℕ → ★ → ★ → ★
+        F^ : ℕ → Type → Type → Type
         F^ n A X = A × ▹^ n X
 
-        S^ : ℕ → ★ → ★
+        S^ : ℕ → Type → Type
         S^ n A = μ (F^ n A)
 
-        S : ★ → ★
+        S : Type → Type
         S = S^ 0
 
         S₂ = S^ 1
@@ -258,7 +258,7 @@ module M
         repeatS : ∀ {A} → A → S A
         repeatS x = fix λ x… → x ∷ x…
 
-        module MapS {A B : ★} (f : A → B) where
+        module MapS {A B : Type} (f : A → B) where
             mapSf : ▹(S A → S B) → S A → S B
             mapSf self s = f (hd s) ∷ self ⊛′ tl s
 
@@ -320,14 +320,14 @@ module M
         arrow = ‼ 1 nats
 
         module Sim
-            {A : ★}
-            (ℛ : A → A → ★)
+            {A : Type}
+            (ℛ : A → A → Type)
             (ℛ-refl : Reflexive ℛ)
           where
-            ≈F : ▹(S A × S A → ★) → S A × S A → ★
+            ≈F : ▹(S A × S A → Type) → S A × S A → Type
             ≈F X (xs , ys) = ℛ (hd xs) (hd ys) × ▸ ((map▹ curry X ⊛′ (tl xs)) ⊛′ tl ys)
 
-            _≈_ : S A × S A → ★
+            _≈_ : S A × S A → Type
             _≈_ = fix ≈F
 
             ≈-tail : ∀ {xs ys : S A} → _≈_ (xs , ys) → ▸ ((map▹ curry (next _≈_) ⊛′ tl xs) ⊛′ tl ys)
@@ -343,7 +343,7 @@ module M
             -}
 
     module DelayedStreams where
-        data F (A : ★) (X : ★) : ★ where
+        data F (A : Type) (X : Type) : Type where
           done  : F A X
           skip  : X → F A X
           yield : A → X → F A X
@@ -353,7 +353,7 @@ module M
         mapF f g (skip x) = skip (g x)
         mapF f g (yield a x) = yield (f a) (g x)
 
-        S : ★ → ★
+        S : Type → Type
         S A = μ (F A)
 
         unS : ∀ {A} → S A → F A (▹ S A)
@@ -385,22 +385,22 @@ module M
         filterS f = unfoldS (filterF f ∘ unS)
 
 module FuelBased where
-    fix : ∀ {a} {A : ★_ a} → ℕ → (A → A) → A
+    fix : ∀ {a} {A : Type_ a} → ℕ → (A → A) → A
     fix zero    f = STUCK where postulate STUCK : _
     fix (suc n) f = f (fix n f)
 
-    fix-rule : ∀ {a} {A : ★_ a} (n : ℕ) {f : A → A} → fix n f ≡ f (fix n f)
+    fix-rule : ∀ {a} {A : Type_ a} (n : ℕ) {f : A → A} → fix n f ≡ f (fix n f)
     fix-rule zero        = ThisIsUnsafeButPlease.trustMe
     fix-rule (suc n) {f} = ap f (fix-rule n)
 
-    fix-uniq : ∀ {a} {A : ★_ a} (n : ℕ) (u : A) f → u ≡ f u → u ≡ fix n f
+    fix-uniq : ∀ {a} {A : Type_ a} (n : ℕ) (u : A) f → u ≡ f u → u ≡ fix n f
     fix-uniq zero    u f pf = ThisIsUnsafeButPlease.trustMe
     fix-uniq (suc n) u f pf = pf ∙ ap f (fix-uniq n u f pf)
 
     module I (n : ℕ) = M id id id idp (fix n) (fix-rule n) id id
                          (fix-uniq n) (λ _ _ → idp)
 
-module HiddenFix {a} {A : ★_ a} (f : A → A) where
+module HiddenFix {a} {A : Type_ a} (f : A → A) where
     -- This definition is not intended to termination-check.
     -- Use with care it's really easy to make the type-checker loop.
     {-# TERMINATING #-}

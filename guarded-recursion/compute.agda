@@ -18,20 +18,20 @@ module guarded-recursion.compute where
 
 -- Same as in prelude but type-in-type
 module Coe₀ where
-    coe : {A B : ★} → A ≡ B → A → B
+    coe : {A B : Type} → A ≡ B → A → B
     coe = transport id
 
-    coe! : {A B : ★} → A ≡ B → B → A
+    coe! : {A B : Type} → A ≡ B → B → A
     coe! = transport id ∘ !
 
-    module _ {A : ★} {P Q : A → ★} (p : P ≡ Q) {x} where
+    module _ {A : Type} {P Q : A → Type} (p : P ≡ Q) {x} where
         coe₁ : P x → Q x
         coe₁ = transport (λ P → P x) p
 
         coe₁! : Q x → P x
         coe₁! = transport (λ P → P x) (! p)
 
-    module _ {A : ★} {B : ★} {R S : A → B → ★} (p : R ≡ S) {x y} where
+    module _ {A : Type} {B : Type} {R S : A → B → Type} (p : R ≡ S) {x y} where
         coe₂ : R x y → S x y
         coe₂ = transport (λ R → R x y) p
 
@@ -41,7 +41,7 @@ open Coe₀
 
 infixl 6 _⊛_
 
-data ▹_ : ★ → ★
+data ▹_ : Type → Type
 
 private
   -- 'run' should not appear in user code
@@ -50,26 +50,26 @@ private
 -- User code should not pattern-match on ▹_...
 data ▹_ where
   next : ∀ {A} → A → ▹ A
-  _⊛_  : ∀ {A} {B : A → ★} → ▹ ((x : A) → B x) → (x : ▹ A) → ▹ (B (run x))
+  _⊛_  : ∀ {A} {B : A → Type} → ▹ ((x : A) → B x) → (x : ▹ A) → ▹ (B (run x))
 
 run (next x) = x
 run (f  ⊛ x) = run f (run x)
 
-▸ : ▹ ★ → ★
+▸ : ▹ Type → Type
 ▸ x = ▹ (run x)
 
-▸F : ∀ {A} → (A → ★) → ▹ A → ★
+▸F : ∀ {A} → (A → Type) → ▹ A → Type
 ▸F F x = ▸ (next F ⊛ x)
 
-map▹ : ∀ {A} {B : A → ★} → ((x : A) → B x) → (x : ▹ A) → ▸F B x
+map▹ : ∀ {A} {B : A → Type} → ((x : A) → B x) → (x : ▹ A) → ▸F B x
 map▹ f x = next f ⊛ x
 
 private
   module Unused where
-    by-computation : ∀ {A} {B : A → ★} {x} → ▸ (next B ⊛ x) ≡ ▹ (B (run x))
+    by-computation : ∀ {A} {B : A → Type} {x} → ▸ (next B ⊛ x) ≡ ▹ (B (run x))
     by-computation = idp
 
-    const⊛ : ∀ {A} {X : ★} {x : ▹ X} → ▸ (next (λ _ → A) ⊛ x) ≡ ▹ A
+    const⊛ : ∀ {A} {X : Type} {x : ▹ X} → ▸ (next (λ _ → A) ⊛ x) ≡ ▹ A
     const⊛ = idp
 
     -- useless: the dependent version is just as fine
@@ -80,10 +80,10 @@ private
     map▹′ : ∀ {A B} → (A → B) → ▹ A → ▹ B
     map▹′ = map▹
 
-zip : ∀ {A} {B : A → ★} → Σ (▹ A) (▸F B) → ▹ Σ A B
+zip : ∀ {A} {B : A → Type} → Σ (▹ A) (▸F B) → ▹ Σ A B
 zip (x , y) = map▹ _,_ x ⊛ y
 
-unzip : ∀ {A} {B : A → ★} → ▹ Σ A B → Σ (▹ A) (▸F B)
+unzip : ∀ {A} {B : A → Type} → ▹ Σ A B → Σ (▹ A) (▸F B)
 unzip p = map▹ fst p , map▹ snd p
 
 module M
@@ -91,7 +91,7 @@ module M
    (fix-rule : ∀ {A} (f : ▹ A → A) → fix f ≡ f (next (fix f))) where
 
   -- Streams of 'A's
-  S : ★ → ★
+  S : Type → Type
   S A = fix (λ X → A × ▸ X)
 
   rollS : ∀ {A} → A × ▹ (S A) → S A
@@ -110,10 +110,10 @@ module M
   _∷_ : ∀ {A} → A → ▹ S A → S A
   x ∷ xs = rollS (x , xs)
 
-  BF : ∀ {A} → ▹ (S A → S A → ★) → S A → S A → ★
+  BF : ∀ {A} → ▹ (S A → S A → Type) → S A → S A → Type
   BF ▹B xs ys = (hd xs ≡ hd ys) × ▸ (▹B ⊛ tl xs ⊛ tl ys)
 
-  B : ∀ {A} → S A → S A → ★
+  B : ∀ {A} → S A → S A → Type
   B = fix BF
 
   rollB : ∀ {A} {xs ys : S A} → BF (next B) xs ys → B xs ys
@@ -152,7 +152,7 @@ module M
   nats : S ℕ
   nats = fix (λ nats → 0 ∷ map▹ (mapS suc) nats)
 
-  ▹^ : ∀ ℕ → ★ → ★
+  ▹^ : ∀ ℕ → Type → Type
   ▹^ zero    A = A
   ▹^ (suc n) A = ▹ ▹^ n A
 

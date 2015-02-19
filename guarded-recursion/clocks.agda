@@ -3,7 +3,7 @@ open import guarded-recursion.prelude
   renaming (O to zero; S to suc)
 open Coe
 module guarded-recursion.clocks
-    (Clk : ★)
+    (Clk : Type)
     (▹ : ∀ {a} → Clk → Set a → Set a)
 
     (▹′ : ∀ {a} κ → ▹ κ (Set a) → Set a)
@@ -82,32 +82,32 @@ module guarded-recursion.clocks
     ▹f ⊛′ x = map▹ (λ f → f x) ▹f
 
     module SimpleStream where
-      F : ★ → ★ → ★
+      F : Type → Type → Type
       F A X = A × X
 
-      S : ★ → ★
+      S : Type → Type
       S A = μ (F A)
 
     {-
-    data IsStream (s : S A) : ★ where
+    data IsStream (s : S A) : Type where
       -- cons : ∀ x xs → IsStream xs → IsStream (cons x xs)
       cons : ∀ x xs → (▹ IsStream) ⊛ next xs → IsStream (cons x xs)
       cons : ∀ x xs → ▹ (IsStream xs) → IsStream (cons x xs)
 
       -}
 
-    μ₁F' : ∀ {κ a} {A : Set a} → ((A → ▹ κ ★) → A → ★) → (▹ κ (A → ★) → A → ★)
+    μ₁F' : ∀ {κ a} {A : Set a} → ((A → ▹ κ Type) → A → Type) → (▹ κ (A → Type) → A → Type)
     μ₁F' F self = F (λ x → (self ⊛ next x))
 
-    μ₁F : ∀ {κ a} {A : Set a} → ((A → ★) → A → ★) → (▹ κ (A → ★) → A → ★)
+    μ₁F : ∀ {κ a} {A : Set a} → ((A → Type) → A → Type) → (▹ κ (A → Type) → A → Type)
     μ₁F F self = F (λ x → ▹′ _ (self ⊛ next x))
 
-    -- μ₁ : Fix (Endo ★)
-    μ₁ : ∀ {a} {A : Set a} → ((A → ★) → A → ★) → A → ★
+    -- μ₁ : Fix (Endo Type)
+    μ₁ : ∀ {a} {A : Set a} → ((A → Type) → A → Type) → A → Type
     μ₁ F x = ∀ {κ} → fix (μ₁F {κ} F) x
 
     module μId where
-        μid : ★
+        μid : Type
         μid = μ id
 
         {-
