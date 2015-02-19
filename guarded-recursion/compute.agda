@@ -178,7 +178,7 @@ module M
 module HiddenFix {A} (f : ▹ A → A) where
     -- This definition is not intended to termination-check.
     -- Use with care it's really easy to make the type-checker loop.
-    {-# NO_TERMINATION_CHECK #-}
+    {-# TERMINATING #-}
     fix : Hidden A
     fix = hide f (next (reveal fix))
 

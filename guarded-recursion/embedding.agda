@@ -403,7 +403,7 @@ module FuelBased where
 module HiddenFix {a} {A : ★_ a} (f : A → A) where
     -- This definition is not intended to termination-check.
     -- Use with care it's really easy to make the type-checker loop.
-    {-# NO_TERMINATION_CHECK #-}
+    {-# TERMINATING #-}
     fix : Hidden A
     fix = hide f (reveal fix)
 
@@ -412,7 +412,7 @@ module HiddenFix {a} {A : ★_ a} (f : A → A) where
 
     -- This definition is not intended to termination-check.
     -- Use with care it's really easy to make the type-checker loop.
-    {-# NO_TERMINATION_CHECK #-}
+    {-# TERMINATING #-}
     fix-uniq : (u : A) → u ≡ f u → u ≡ reveal fix
     fix-uniq u pf = pf ∙ ap f (fix-uniq u pf) ∙ ! fix-rule
 
