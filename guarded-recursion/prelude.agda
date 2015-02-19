@@ -34,8 +34,12 @@ open import Data.Empty
                        ;⊥-elim to 𝟘-elim)
 open import Data.Unit
               public
-              using (Hidden; Unit; hide; reveal)
+              using ()
+          --  using (Hidden; Unit; hide; reveal)
               renaming (⊤ to 𝟙)
+open import Data.Unit.NonEta
+              public
+              using (Hidden; Unit; hide; reveal)
 import      Data.Product
 open        Data.Product
               public
